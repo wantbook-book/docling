@@ -3,7 +3,7 @@
 #
 # What this example does
 # - Configures `PictureDescriptionApiOptions` for local or cloud providers.
-# - Converts a PDF, then prints each picture's caption and annotations.
+# - Converts a PDF, then prints each picture's caption and metadata.
 #
 # Prerequisites
 # - Install Docling and `python-dotenv` if loading env vars from a `.env` file.
@@ -173,10 +173,15 @@ def main():
 
     for element, _level in result.document.iterate_items():
         if isinstance(element, PictureItem):
+            description = (
+                element.meta.description.text
+                if element.meta and element.meta.description
+                else None
+            )
             print(
                 f"Picture {element.self_ref}\n"
                 f"Caption: {element.caption_text(doc=result.document)}\n"
-                f"Annotations: {element.annotations}"
+                f"Description meta: {description}"
             )
 
 

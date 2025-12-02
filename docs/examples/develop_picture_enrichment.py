@@ -3,7 +3,7 @@
 #
 # What this example does
 # - Demonstrates how to implement an enrichment model that annotates pictures.
-# - Adds a dummy PictureClassificationData entry to each PictureItem.
+# - Populates the `meta.classification` field for each PictureItem.
 #
 # Important
 # - This is a scaffold for development; it does not run a real classifier.
@@ -25,9 +25,9 @@ from typing import Any
 from docling_core.types.doc import (
     DoclingDocument,
     NodeItem,
-    PictureClassificationClass,
-    PictureClassificationData,
+    PictureClassificationMetaField,
     PictureItem,
+    PictureMeta,
 )
 
 from docling.datamodel.base_models import InputFormat
@@ -60,13 +60,17 @@ class ExamplePictureClassifierEnrichmentModel(BaseEnrichmentModel):
             # uncomment this to interactively visualize the image
             # element.get_image(doc).show()  # may block; avoid in headless runs
 
-            element.annotations.append(
-                PictureClassificationData(
-                    provenance="example_classifier-0.0.1",
-                    predicted_classes=[
-                        PictureClassificationClass(class_name="dummy", confidence=0.42)
-                    ],
-                )
+            if element.meta is None:
+                element.meta = PictureMeta()
+
+            element.meta.classification = PictureClassificationMetaField(
+                predictions=[
+                    {
+                        "class_name": "dummy",
+                        "confidence": 0.42,
+                        "created_by": "example_classifier-0.0.1",
+                    }
+                ]
             )
 
             yield element
@@ -111,7 +115,7 @@ def main():
     for element, _level in result.document.iterate_items():
         if isinstance(element, PictureItem):
             print(
-                f"The model populated the `data` portion of picture {element.self_ref}:\n{element.annotations}"
+                f"The model populated `meta.classification` of picture {element.self_ref}:\n{element.meta.classification}"
             )
 
 

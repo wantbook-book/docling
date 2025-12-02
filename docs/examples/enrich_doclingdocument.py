@@ -4,7 +4,7 @@
 # What this example does
 # - Loads a previously converted DoclingDocument from JSON (no reconversion).
 # - Uses a backend to crop images for items and runs an enrichment model in batches.
-# - Prints a few example annotations to stdout.
+# - Prints a few example metadata entries to stdout.
 #
 # Prerequisites
 # - A DoclingDocument JSON produced by another conversion (path configured below).
@@ -146,7 +146,10 @@ def main():
 
     for pic in doc.pictures[:5]:
         print(pic.self_ref)
-        pprint(pic.annotations)
+        classification_meta = (
+            pic.meta.classification if pic.meta and pic.meta.classification else None
+        )
+        pprint(classification_meta)
 
 
 if __name__ == "__main__":

@@ -4,12 +4,11 @@ from pathlib import Path
 from typing import List, Optional, Type, Union
 
 from docling_core.types.doc import (
+    DescriptionMetaField,
     DoclingDocument,
     NodeItem,
     PictureItem,
-)
-from docling_core.types.doc.document import (  # TODO: move import to docling_core.types.doc
-    PictureDescriptionData,
+    PictureMeta,
 )
 from PIL import Image
 
@@ -80,8 +79,11 @@ class PictureDescriptionBaseModel(
         outputs = self._annotate_images(images)
 
         for item, output in zip(elements, outputs):
-            item.annotations.append(
-                PictureDescriptionData(text=output, provenance=self.provenance)
+            if item.meta is None:
+                item.meta = PictureMeta()
+
+            item.meta.description = DescriptionMetaField(
+                text=output, created_by=self.provenance
             )
             yield item
 

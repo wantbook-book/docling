@@ -1,15 +1,17 @@
 from collections.abc import Iterable
 from pathlib import Path
-from typing import List, Literal, Optional, Union
+from typing import Any, List, Literal, Optional, Union
 
 import numpy as np
 from docling_core.types.doc import (
     DoclingDocument,
     NodeItem,
     PictureClassificationClass,
-    PictureClassificationData,
+    PictureClassificationMetaField,
     PictureItem,
+    PictureMeta,
 )
+from docling_core.types.doc.document import PictureClassificationPrediction
 from PIL import Image
 from pydantic import BaseModel
 
@@ -85,6 +87,7 @@ class DocumentPictureClassifier(BaseItemAndImageEnrichmentModel):
         """
         self.enabled = enabled
         self.options = options
+        self.provenance = "DocumentPictureClassifier"
 
         if self.enabled:
             device = decide_device(accelerator_options.device)
@@ -152,7 +155,7 @@ class DocumentPictureClassifier(BaseItemAndImageEnrichmentModel):
         -------
         Iterable[NodeItem]
             An iterable of NodeItem objects after processing. The field
-            'data.classification' is added containing the classification for each picture.
+            'meta.classification' is populated with the classification for each picture.
         """
         if not self.enabled:
             for element in element_batch:
@@ -169,17 +172,32 @@ class DocumentPictureClassifier(BaseItemAndImageEnrichmentModel):
         outputs = self.document_picture_classifier.predict(images)
 
         for item, output in zip(elements, outputs):
-            item.annotations.append(
-                PictureClassificationData(
-                    provenance="DocumentPictureClassifier",
-                    predicted_classes=[
-                        PictureClassificationClass(
-                            class_name=pred[0],
-                            confidence=pred[1],
-                        )
-                        for pred in output
-                    ],
+            if item.meta is None:
+                item.meta = PictureMeta()
+
+            predictions = [self._build_prediction_entry(pred) for pred in output]
+
+            if predictions:
+                item.meta.classification = PictureClassificationMetaField(
+                    predictions=predictions
                 )
-            )
 
             yield item
+
+    def _build_prediction_entry(
+        self, pred: Union[PictureClassificationClass, tuple[Any, Any]]
+    ) -> PictureClassificationPrediction:
+        if isinstance(pred, PictureClassificationClass):
+            class_name = pred.class_name
+            confidence = (
+                float(pred.confidence) if pred.confidence is not None else None
+            )
+        else:
+            class_name = pred[0]
+            confidence = float(pred[1]) if pred[1] is not None else None
+
+        return PictureClassificationPrediction(
+            class_name=class_name,
+            confidence=confidence,
+            created_by=self.provenance,
+        )

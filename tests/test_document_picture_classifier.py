@@ -1,7 +1,5 @@
 from pathlib import Path
 
-from docling_core.types.doc import PictureClassificationData
-
 from docling.datamodel.base_models import InputFormat
 from docling.datamodel.document import ConversionResult
 from docling.datamodel.pipeline_options import PdfPipelineOptions
@@ -47,33 +45,39 @@ def test_picture_classifier():
     assert len(results) == 2
 
     res = results[0]
-    assert len(res.annotations) == 1
-    assert isinstance(res.annotations[0], PictureClassificationData)
-    classification_data = res.annotations[0]
-    assert classification_data.provenance == "DocumentPictureClassifier"
-    assert len(classification_data.predicted_classes) == 16, (
+    assert res.meta is not None
+    assert res.meta.classification is not None
+    classification_data = res.meta.classification
+    assert len(classification_data.predictions) == 16, (
         "Number of predicted classes is not equal to 16"
     )
-    confidences = [pred.confidence for pred in classification_data.predicted_classes]
+    confidences = [pred.confidence for pred in classification_data.predictions]
     assert confidences == sorted(confidences, reverse=True), (
         "Predictions are not sorted in descending order of confidence"
     )
-    assert classification_data.predicted_classes[0].class_name == "bar_chart", (
+    assert all(
+        pred.created_by == "DocumentPictureClassifier"
+        for pred in classification_data.predictions
+    )
+    assert classification_data.predictions[0].class_name == "bar_chart", (
         "The prediction is wrong for the bar chart image."
     )
 
     res = results[1]
-    assert len(res.annotations) == 1
-    assert isinstance(res.annotations[0], PictureClassificationData)
-    classification_data = res.annotations[0]
-    assert classification_data.provenance == "DocumentPictureClassifier"
-    assert len(classification_data.predicted_classes) == 16, (
+    assert res.meta is not None
+    assert res.meta.classification is not None
+    classification_data = res.meta.classification
+    assert len(classification_data.predictions) == 16, (
         "Number of predicted classes is not equal to 16"
     )
-    confidences = [pred.confidence for pred in classification_data.predicted_classes]
+    confidences = [pred.confidence for pred in classification_data.predictions]
     assert confidences == sorted(confidences, reverse=True), (
         "Predictions are not sorted in descending order of confidence"
     )
-    assert classification_data.predicted_classes[0].class_name == "map", (
+    assert all(
+        pred.created_by == "DocumentPictureClassifier"
+        for pred in classification_data.predictions
+    )
+    assert classification_data.predictions[0].class_name == "map", (
         "The prediction is wrong for the bar chart image."
     )
